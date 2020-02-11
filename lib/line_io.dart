@@ -10,7 +10,7 @@ class LineReader {
 
   String readLine({String lineDelimiter = '\n', bool allowMalformed = false}) {
     final decoder = Utf8Decoder(allowMalformed: allowMalformed);
-    final allowMfDecoder = Utf8Decoder(allowMalformed: true);
+
     var line = '';
     int byte;
     var priorChar = '';

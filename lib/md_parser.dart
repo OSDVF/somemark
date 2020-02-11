@@ -7,6 +7,11 @@ import 'line_io.dart';
 
 ///Will return non-nested list of nodes in Markdown Document
 class UnrolledBlockParser implements BlockParser {
+  int currentLineNum = 0;
+  int lastReadedLineNum = 0;
+
+  String _nextLine;
+
   LineReader _reader;
   UnrolledBlockParser() {
     document = Document(inlineSyntaxes: [
@@ -52,7 +57,14 @@ class UnrolledBlockParser implements BlockParser {
                 }
               }
             }
-            returnedNodes.add(MdNode(name:'space'));
+            returnedNodes.add(MdNode(name: 'space'));
+            break;
+          case 'ul':
+          case 'ol':
+            for (var li in bNode.children) {
+              returnedNodes
+                  .add(MdNode(content: li.textContent, name: bNode.tag));
+            }
             break;
           default:
             returnedNodes.add(MdNode(
@@ -74,7 +86,17 @@ class UnrolledBlockParser implements BlockParser {
 
   @override
   void advance() {
-    current = _reader.readLine();
+    assert(lastReadedLineNum == currentLineNum ||
+        lastReadedLineNum == currentLineNum + 1);
+    if (lastReadedLineNum >
+        currentLineNum) //Should be maximally greater greater by one
+    {
+      current = _nextLine;
+      currentLineNum = lastReadedLineNum;
+    } else {
+      lastReadedLineNum = ++currentLineNum;
+      current = _reader.readLine();
+    }
   }
 
   @override
@@ -102,13 +124,17 @@ class UnrolledBlockParser implements BlockParser {
 
   @override
   bool matchesNext(RegExp regex) {
-    // TODO: implement matchesNext
-    throw UnimplementedError();
+    return regex.hasMatch(next);
   }
 
   @override
-  // TODO: implement next
-  String get next => throw UnimplementedError();
+  String get next {
+    if (lastReadedLineNum <= currentLineNum) {
+      lastReadedLineNum = currentLineNum + 1;
+      _nextLine = _reader.readLine();
+    }
+    return _nextLine;
+  }
 
   @override
   List<Node> parseLines() {
